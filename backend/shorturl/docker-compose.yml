@@ -1,0 +1,24 @@
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_START_RPC=true
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh localhost 9042 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build: .
+    container_name: shorturl-api
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    environment:
+      - CASSANDRA_HOST=cassandra
+    ports:
+      - "8080:8080"  
