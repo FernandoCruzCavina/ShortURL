@@ -9,6 +9,7 @@ import (
 
 type ShorturlHandler interface {
 	GetUrl(*gin.Context)
+	CreateShorturl(*gin.Context)
 }
 
 type shorturlHandler struct {
@@ -19,6 +20,10 @@ func NewShorturlHandler(shorturlService services.ShorturlService) ShorturlHandle
 	return &shorturlHandler{
 		shorturlService: shorturlService,
 	}
+}
+
+type CreateShorturlRequest struct {
+	URL string `json:"url"`
 }
 
 func (serv shorturlHandler) GetUrl(ctx *gin.Context)  {
@@ -35,4 +40,22 @@ func (serv shorturlHandler) GetUrl(ctx *gin.Context)  {
 	}
 
 	ctx.JSON(http.StatusOK, url)
+}
+
+func (serv *shorturlHandler) CreateShorturl(ctx *gin.Context) {
+	var url CreateShorturlRequest
+	err := ctx.BindJSON(&url)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, "waited object format {url: 'https://example.com/'}")
+		return
+	}
+
+	shorturl, err := serv.shorturlService.CreateShorturl(url.URL) 
+
+	if err != nil {
+		ctx.JSON(http.StatusBadGateway, "System error")
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, shorturl)
 }

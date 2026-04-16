@@ -15,6 +15,7 @@ func InitRoutes() {
 	hand := handlers.NewShorturlHandler(serv)
 
 	r.GET("/:id", hand.GetUrl)
+	r.POST("/", hand.CreateShorturl)
 	//r.SetTrustedProxies([]string{"192.168.1.2"})
-	r.Run()
+	r.Run(":9000")
 }

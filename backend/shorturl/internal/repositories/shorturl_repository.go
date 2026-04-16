@@ -7,6 +7,7 @@ import (
 
 type ShorturlRepository interface {
 	GetUrl(string) (*models.Shorturl, error) 
+	CreateShorturl(models.Shorturl) (error)
 }
 
 type shorturlRepository struct {}
@@ -29,7 +30,14 @@ func (st shorturlRepository) GetUrl(id string) (*models.Shorturl, error){
 	return shorturl, nil
 }
 
-//func CreateUrl(shorturl models.Shorturl) *models.Shorturl {
-//	session := database.GetDatabaseConnection()
+func (st shorturlRepository) CreateShorturl(shorturl models.Shorturl) (error) {
+	session := database.GetDatabaseConnection()
 
-//}
+	err := session.Query(`INSERT INTO shorturl (id,url) VALUES (?,?)`, shorturl.Id, shorturl.Url).Exec()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
