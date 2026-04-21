@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/sha256"
+	"os"
 	"sort"
 	"sync"
 	"github.com/fernandocruzcavina/shorturl/internal/models"
@@ -11,12 +12,14 @@ import (
 var (
 	mutex sync.RWMutex
 	idSeq = 62000
-	key   = "secretKey"
+	key   = os.Getenv("secret_key")
 )
 
 type ShorturlService interface {
 	GetUrl(string) (*string, error)
-	CreateShorturl(string) (*models.Shorturl, error)
+	CreateShortUrl(string) (*models.Shorturl, error)
+	UpdateShortUrl(models.Shorturl) (*models.Shorturl, error)
+	DeleteShortUrl(string) (error)
 }
 
 type shorturlService struct {
@@ -29,7 +32,7 @@ func NewShorturlService(shorturlRepository repositories.ShorturlRepository) Shor
 	}
 }
 
-func (repo *shorturlService)CreateShorturl(url string) (*models.Shorturl, error){
+func (repo *shorturlService)CreateShortUrl(url string) (*models.Shorturl, error){
 	mutex.Lock()
 	id := idSeq
 	idSeq++
@@ -60,6 +63,35 @@ func (repo *shorturlService) GetUrl(id string) (*string, error){
 	}
 	
 	return &shorturl.Url, nil
+}
+
+func (repo *shorturlService) UpdateShortUrl(shorturl models.Shorturl) (*models.Shorturl, error){
+	_, err := repo.shorturlRepository.GetUrl(shorturl.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repo.shorturlRepository.UpdateShortUrl(shorturl)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &shorturl, nil
+}
+
+func (repo *shorturlService) DeleteShortUrl(id string) (error) {
+	_, err := repo.shorturlRepository.GetUrl(id)
+	if err != nil {
+		return err
+	}
+
+	err = repo.shorturlRepository.DeleteShortUrl(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const base62 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -104,20 +136,4 @@ func encodeBase62(num int, alphabet string) string {
 	}
 
 	return result
-}
-
-func decodeBase62(str string, alphabet string) int {
-	base := len(alphabet)
-	index := make(map[rune]int)
-
-	for i, c := range alphabet {
-		index[c] = i
-	}
-
-	num := 0
-	for _, c := range str {
-		num = num*base + index[c]
-	}
-
-	return num
 }

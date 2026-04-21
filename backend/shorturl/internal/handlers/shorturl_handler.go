@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/fernandocruzcavina/shorturl/internal/dto"
+	"github.com/fernandocruzcavina/shorturl/internal/models"
 	"github.com/fernandocruzcavina/shorturl/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +12,8 @@ import (
 type ShorturlHandler interface {
 	GetUrl(*gin.Context)
 	CreateShorturl(*gin.Context)
+	UpdateShortUrl(*gin.Context)
+	DeleteShortUrl(*gin.Context)
 }
 
 type shorturlHandler struct {
@@ -20,10 +24,6 @@ func NewShorturlHandler(shorturlService services.ShorturlService) ShorturlHandle
 	return &shorturlHandler{
 		shorturlService: shorturlService,
 	}
-}
-
-type CreateShorturlRequest struct {
-	URL string `json:"url"`
 }
 
 func (serv shorturlHandler) GetUrl(ctx *gin.Context)  {
@@ -43,19 +43,51 @@ func (serv shorturlHandler) GetUrl(ctx *gin.Context)  {
 }
 
 func (serv *shorturlHandler) CreateShorturl(ctx *gin.Context) {
-	var url CreateShorturlRequest
+	var url dto.CreateShorturlRequest
 	err := ctx.BindJSON(&url)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, "waited object format {url: 'https://example.com/'}")
+		ctx.JSON(http.StatusBadRequest, "expected object format {url: 'https://example.com/'}")
 		return
 	}
 
-	shorturl, err := serv.shorturlService.CreateShorturl(url.URL) 
+	shorturl, err := serv.shorturlService.CreateShortUrl(url.URL) 
 
 	if err != nil {
-		ctx.JSON(http.StatusBadGateway, "System error")
+		ctx.JSON(http.StatusForbidden, "System error")
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, shorturl)
+}
+
+func (serv *shorturlHandler) UpdateShortUrl(ctx *gin.Context) {
+	var shorturl models.Shorturl
+	err := ctx.BindJSON(&shorturl)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, "expected object format { id: 'code', url: 'link' }")
+	}
+
+	updatedShorturl, err := serv.shorturlService.UpdateShortUrl(shorturl)
+
+	if err != nil {
+		ctx.JSON(http.StatusForbidden, "system error")
+	}
+
+	ctx.JSON(http.StatusAccepted, updatedShorturl)
+}
+
+func (serv *shorturlHandler) DeleteShortUrl(ctx *gin.Context) {
+	id, isGetId := ctx.Params.Get("id")
+	if !isGetId {
+		ctx.JSON(http.StatusBadRequest, "the id wasn't retrivied")
+	}
+
+	err := serv.shorturlService.DeleteShortUrl(id)
+
+	if err != nil {
+		ctx.JSON(http.StatusForbidden, "system error")
+	}
+
+	ctx.JSON(http.StatusOK, "the shorturl with id = " + id + " was deleted")
 }

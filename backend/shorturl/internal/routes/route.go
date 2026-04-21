@@ -16,6 +16,8 @@ func InitRoutes() {
 
 	r.GET("/:id", hand.GetUrl)
 	r.POST("/", hand.CreateShorturl)
+	r.PUT("/", hand.UpdateShortUrl)
+	r.DELETE("/:id", hand.DeleteShortUrl)
 	//r.SetTrustedProxies([]string{"192.168.1.2"})
 	r.Run(":9000")
 }

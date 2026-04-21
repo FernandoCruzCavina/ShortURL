@@ -8,6 +8,8 @@ import (
 type ShorturlRepository interface {
 	GetUrl(string) (*models.Shorturl, error) 
 	CreateShorturl(models.Shorturl) (error)
+	UpdateShortUrl(models.Shorturl) (error)
+	DeleteShortUrl(string) (error)
 }
 
 type shorturlRepository struct {}
@@ -34,6 +36,30 @@ func (st shorturlRepository) CreateShorturl(shorturl models.Shorturl) (error) {
 	session := database.GetDatabaseConnection()
 
 	err := session.Query(`INSERT INTO shorturl (id,url) VALUES (?,?)`, shorturl.Id, shorturl.Url).Exec()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (st shorturlRepository) UpdateShortUrl(shorturl models.Shorturl) (error) {
+	session := database.GetDatabaseConnection()
+
+	err := session.Query(`UPDATE shorturl SET url=? WHERE id=?`, shorturl.Url, shorturl.Id).Exec()
+
+	if err != nil {	
+		return err
+	}
+
+	return nil
+}
+
+func (st shorturlRepository) DeleteShortUrl(id string) (error) {
+	session := database.GetDatabaseConnection()
+
+	err := session.Query(`DELETE FROM shorturl WHERE id=?`, id).Exec()
 
 	if err != nil {
 		return err
